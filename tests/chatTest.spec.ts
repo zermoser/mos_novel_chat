@@ -30,10 +30,16 @@ test.describe('NovelChatAppModule', () => {
     const lastMessageHeader = page.locator('[data-testid="message-header"]').last();
     await expect(lastMessageHeader).toContainText('มอส');
 
-    // Verify message bubble styling
-    const lastMessageBubble = page.locator('[data-testid^="message-bubble-"]').last();
-    await expect(lastMessageBubble).toHaveClass(/bg-gradient-to-br/);
-    await expect(lastMessageBubble).toHaveClass(/from-blue-400/);
+    // รอจนกว่า message bubble จะปรากฏ
+    const messageBubble = page.locator('.rounded-2xl:has-text("สวัสดีครับ")');
+    await messageBubble.waitFor({ state: 'visible' });
+
+    // ตรวจสอบ class โดยตรง
+    const classes = await messageBubble.getAttribute('class');
+    expect(classes).toContain('from-blue-400');
+    expect(classes).toContain('to-indigo-500');
+    
+    // await page.waitForTimeout(5000); // รอ 5วิ หน่วยเป็นมิลลิวินาที
   });
 
   test('should switch between characters', async ({ page }) => {
@@ -89,7 +95,7 @@ test.describe('NovelChatAppModule', () => {
     await page.getByTestId('send-button').click();
 
     // Verify message styling - use more specific selector
-    const newMessageBubble = page.locator('[data-testid^="message-bubble-"]:has-text("ข้อความทดสอบ")');
+    const newMessageBubble = page.locator('.rounded-2xl:has-text("ข้อความทดสอบ")');
     await expect(newMessageBubble).toHaveClass(/from-purple-400/);
   });
 
@@ -138,6 +144,9 @@ test.describe('NovelChatAppModule', () => {
     await page.getByTestId('color-option-เทา').click();
     await page.getByTestId('character-personality-input').fill('ตัวละครที่พร้อมจะถูกลบ');
     await page.getByTestId('save-character-button').click();
+
+    // Wait for character to be added before closing settings
+    await expect(page.getByTestId('character-card-temp-char')).toBeVisible();
     await page.getByTestId('close-settings-button').click();
 
     // Switch to the temporary character
@@ -149,16 +158,15 @@ test.describe('NovelChatAppModule', () => {
     // Open settings again
     await page.getByTestId('settings-button').click();
 
+    // Set up dialog handler BEFORE clicking delete
+    page.once('dialog', dialog => dialog.accept());
+
     // Delete the temporary character
-    const tempCard = page.getByTestId('character-card-temp-char');
-    await tempCard.hover();
-    await page.getByTestId('delete-character-temp-char').click();
+    const deleteButton = page.getByTestId('delete-character-temp-char');
+    await deleteButton.click();
 
-    // Confirm deletion
-    page.on('dialog', dialog => dialog.accept());
-
-    // Verify deletion
-    await expect(page.getByTestId('character-card-temp-char')).not.toBeVisible();
+    // Wait for character card to be removed
+    await expect(page.getByTestId('character-card-temp-char')).not.toBeAttached();
 
     // Close settings
     await page.getByTestId('close-settings-button').click();

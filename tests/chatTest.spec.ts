@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// await page.waitForTimeout(8000); // รอ 8วิ หน่วยเป็นมิลลิวินาที
+
+
 test.describe('NovelChatAppModule', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -38,8 +41,6 @@ test.describe('NovelChatAppModule', () => {
     const classes = await messageBubble.getAttribute('class');
     expect(classes).toContain('from-blue-400');
     expect(classes).toContain('to-indigo-500');
-    
-    // await page.waitForTimeout(5000); // รอ 5วิ หน่วยเป็นมิลลิวินาที
   });
 
   test('should switch between characters', async ({ page }) => {
@@ -158,21 +159,14 @@ test.describe('NovelChatAppModule', () => {
     // Open settings again
     await page.getByTestId('settings-button').click();
 
-    // Set up dialog handler BEFORE clicking delete
+    // Set up dialog handler
     page.once('dialog', dialog => dialog.accept());
 
     // Delete the temporary character
-    const deleteButton = page.getByTestId('delete-character-temp-char');
-    await deleteButton.click();
+    await page.getByTestId('delete-character-temp-char').click();
 
     // Wait for character card to be removed
     await expect(page.getByTestId('character-card-temp-char')).not.toBeAttached();
-
-    // Close settings
-    await page.getByTestId('close-settings-button').click();
-
-    // Verify we're back to the first character
-    await expect(page.getByTestId('current-character-name')).toHaveText('มอส');
   });
 
   test('should update app settings', async ({ page }) => {

@@ -6,7 +6,6 @@ interface Message {
     id: number;
     sender: string;
     text: string;
-    timestamp?: Date;
     isRead?: boolean;
 }
 
@@ -44,23 +43,12 @@ const MessageBubble = ({
     character?: Character;
     isCurrentSpeaker: boolean;
 }) => {
-    // const formatTime = (date: Date) => {
-    //     return date.toLocaleTimeString('th-TH', {
-    //         hour: '2-digit',
-    //         minute: '2-digit'
-    //     });
-    // };
-
     // Center system messages
     if (message.sender === 'system') {
         return (
             <div className="flex justify-center my-2">
                 <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 text-sm max-w-[90%] text-center">
                     <p className="whitespace-pre-wrap">{message.text}</p>
-                    {/* <div className="flex items-center justify-center mt-1 text-amber-700 text-xs">
-                        <Clock size={12} className="inline-block mr-1" />
-                        {formatTime(message.timestamp)}
-                    </div> */}
                 </div>
             </div>
         );
@@ -87,13 +75,6 @@ const MessageBubble = ({
                 )}
 
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
-
-                {/* <div className={`flex items-center justify-between mt-2 ${isCurrentSpeaker ? 'text-white/70' : 'text-gray-500'}`}>
-                    <span className="text-[8px] flex items-center">
-                        <Clock size={8} className="inline-block mr-1" />
-                        {formatTime(message.timestamp)}
-                    </span>
-                </div> */}
             </div>
 
             {isCurrentSpeaker && character && (
@@ -277,7 +258,6 @@ const NovelChatApp: React.FC = () => {
                 id: 1,
                 sender: 'system',
                 text: '📖 เรื่องราวของเรากำลังจะเริ่มต้น...',
-                // timestamp: new Date(Date.now() - 300000),
                 isRead: true
             };
             setMessages([initialMessage]);
@@ -313,7 +293,6 @@ const NovelChatApp: React.FC = () => {
             id: Date.now(),
             sender: currentSpeaker,
             text: text.trim(),
-            // timestamp: new Date(),
             isRead: true
         };
 

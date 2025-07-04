@@ -212,47 +212,12 @@ const NovelChatApp: React.FC = () => {
     });
 
     // Initial messages
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: 1,
-            sender: 'system',
-            text: '📖 เรื่องราวของเรากำลังจะเริ่มต้น...',
-            timestamp: new Date(Date.now() - 300000),
-            isRead: true
-        },
-        // {
-        //     id: 2,
-        //     sender: 'maya',
-        //     text: 'อเล็กซ์... เธอยังอยู่ที่นั่นมั้ย? 🌙',
-        //     timestamp: new Date(Date.now() - 240000),
-        //     emotion: 'sad',
-        //     reactions: 0,
-        //     isRead: true
-        // },
-        // {
-        //     id: 3,
-        //     sender: 'alex',
-        //     text: 'มายา! ฉันคิดถึงเธอมากเลย ขอโทษที่หายไปนานนะ 💔',
-        //     timestamp: new Date(Date.now() - 180000),
-        //     emotion: 'love',
-        //     reactions: 0,
-        //     isRead: true
-        // },
-        // {
-        //     id: 4,
-        //     sender: 'maya',
-        //     text: 'ฉันรอเธอมาตลอด... เหมือนดวงดาวที่รอให้พระจันทร์กลับมา ✨',
-        //     timestamp: new Date(Date.now() - 120000),
-        //     emotion: 'love',
-        //     reactions: 0,
-        //     isRead: true
-        // }
-    ]);
+    const [messages, setMessages] = useState<Message[]>([]);
 
     // Initial characters
     const [characters, setCharacters] = useState<Character[]>([
         {
-            id: 'maya',
+            id: '1',
             name: 'มายา',
             avatar: '🌸',
             status: 'online',
@@ -260,7 +225,7 @@ const NovelChatApp: React.FC = () => {
             personality: 'นักเขียนสาวผู้เปี่ยมด้วยจินตนาการ'
         },
         {
-            id: 'alex',
+            id: '2',
             name: 'อเล็กซ์',
             avatar: '🎭',
             status: 'online',
@@ -277,7 +242,7 @@ const NovelChatApp: React.FC = () => {
         }
     ]);
 
-    const [currentSpeaker, setCurrentSpeaker] = useState<string>('alex');
+    const [currentSpeaker, setCurrentSpeaker] = useState<string>('1');
     const [input, setInput] = useState('');
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
@@ -318,6 +283,19 @@ const NovelChatApp: React.FC = () => {
     const getCharacterById = (id: string) => {
         return characters.find(char => char.id === id);
     };
+
+    useEffect(() => {
+        if (messages.length === 0) {
+            const initialMessage: Message = {
+                id: 1,
+                sender: 'system',
+                text: '📖 เรื่องราวของเรากำลังจะเริ่มต้น...',
+                timestamp: new Date(Date.now() - 300000),
+                isRead: true
+            };
+            setMessages([initialMessage]);
+        }
+    }, [messages.length]);
 
     // Effect for scrolling and reading progress
     useEffect(() => {
@@ -376,25 +354,37 @@ const NovelChatApp: React.FC = () => {
 
     // Handle editing an existing character
     const handleEditCharacter = () => {
-        if (!editingCharacter || !editingCharacter.name || !editingCharacter.avatar || !editingCharacter.color || !editingCharacter.personality) {
+        if (!newCharacter.name || !newCharacter.avatar || !newCharacter.color || !newCharacter.personality) {
             alert('กรุณากรอกข้อมูลให้ครบถ้วน');
             return;
         }
         setCharacters(prev => prev.map(char =>
-            char.id === editingCharacter.id ? { ...editingCharacter, status: char.status } : char
+            char.id === editingCharacter?.id ? { ...newCharacter, status: char.status } : char
         ));
         setEditingCharacter(null);
+        setNewCharacter(defaultCharacterValues);
         setShowAddCharacterModal(false);
     };
 
     // Handle deleting a character
     const handleDeleteCharacter = (id: string) => {
+        if (id === 'system') {
+            alert('ไม่สามารถลบผู้เล่าเรื่องได้');
+            return;
+        }
+
+        const remainingCharacters = characters.filter(char => char.id !== id);
+        if (remainingCharacters.length < 2) {
+            alert('ต้องมีตัวละครอย่างน้อย 2 ตัว (รวมผู้เล่าเรื่อง)');
+            return;
+        }
+
         if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบตัวละครนี้?`)) {
-            setCharacters(prev => prev.filter(char => char.id !== id));
+            setCharacters(remainingCharacters);
             if (currentSpeaker === id) {
-                const remainingSpeakers = characters.filter(c => c.id !== 'system' && c.id !== id);
-                if (remainingSpeakers.length > 0) {
-                    setCurrentSpeaker(remainingSpeakers[0].id);
+                const availableSpeakers = remainingCharacters.filter(c => c.id !== 'system');
+                if (availableSpeakers.length > 0) {
+                    setCurrentSpeaker(availableSpeakers[0].id);
                 } else {
                     setCurrentSpeaker('system');
                 }
@@ -410,7 +400,7 @@ const NovelChatApp: React.FC = () => {
     };
 
     // Prepare character options for the selector, excluding 'system'
-    const selectableCharacters = characters.filter(char => char.id !== 'system');
+    const selectableCharacters = characters;
 
     return (
         <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 text-gray-800 font-inter antialiased">
@@ -605,7 +595,7 @@ const NovelChatApp: React.FC = () => {
                                 <span>เพิ่มตัวละครใหม่</span>
                             </button>
                             <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                                {characters.filter(c => c.id !== 'system').map((char) => (
+                                {characters.map((char) => (
                                     <div key={char.id} className="flex items-center justify-between bg-white p-2 sm:p-3 rounded-lg border border-gray-200 shadow-sm">
                                         <div className="flex items-center space-x-2">
                                             <CharacterAvatar character={char} size="sm" />
@@ -626,13 +616,15 @@ const NovelChatApp: React.FC = () => {
                                             >
                                                 <Edit size={14} />
                                             </button>
-                                            <button
-                                                onClick={() => handleDeleteCharacter(char.id)}
-                                                className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-600 transition-colors"
-                                                aria-label={`Delete ${char.name}`}
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
+                                            {char.id !== 'system' && (
+                                                <button
+                                                    onClick={() => handleDeleteCharacter(char.id)}
+                                                    className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-600 transition-colors"
+                                                    aria-label={`Delete ${char.name}`}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

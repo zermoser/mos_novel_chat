@@ -1,167 +1,198 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('NovelChatApp', () => {
+test.describe('NovelChatAppModule', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
   });
 
   test('should display initial UI elements', async ({ page }) => {
     // Header verification
-    await expect(page.locator('text=Novel Chat')).toBeVisible();
-    await expect(page.locator('text=เรื่องหลอน ๆ ของ Dev นอนน้อย')).toBeVisible();
+    await expect(page.getByTestId('app-title')).toHaveText('Novel Chat');
+    await expect(page.getByTestId('app-subtitle')).toHaveText('เรื่องหลอน ๆ ของ Dev นอนน้อย');
 
     // Initial messages
-    await expect(page.locator('text=📖 เรื่องราวของเรากำลังจะเริ่มต้น...')).toBeVisible();
+    await expect(page.getByTestId('system-message')).toContainText('เรื่องราวของเรากำลังจะเริ่มต้น...');
 
     // Input area
-    await expect(page.getByPlaceholder('พิมพ์ข้อความในนามของ มอส...')).toBeVisible();
-    await expect(page.locator('button:has-text("Send")')).toBeVisible();
+    await expect(page.getByTestId('message-input')).toBeVisible();
+    await expect(page.getByTestId('send-button')).toBeVisible();
   });
 
   test('should send and display user messages', async ({ page }) => {
     // Send message as first character
-    await page.fill('input[placeholder*="พิมพ์ข้อความ"]', 'สวัสดีครับ');
-    await page.click('button:has-text("Send")');
+    await page.getByTestId('message-input').fill('สวัสดีครับ');
+    await page.getByTestId('send-button').click();
 
     // Verify message appears
     await expect(page.locator('text=สวัสดีครับ').last()).toBeVisible();
-    await expect(page.locator('text=มอส').last()).toBeVisible();
+
+    // Verify sender name in message header
+    const lastMessageHeader = page.locator('[data-testid="message-header"]').last();
+    await expect(lastMessageHeader).toContainText('มอส');
 
     // Verify message bubble styling
-    const lastMessageBubble = page.locator('.rounded-2xl').last();
+    const lastMessageBubble = page.locator('[data-testid^="message-bubble-"]').last();
     await expect(lastMessageBubble).toHaveClass(/bg-gradient-to-br/);
     await expect(lastMessageBubble).toHaveClass(/from-blue-400/);
   });
 
   test('should switch between characters', async ({ page }) => {
     // Verify initial character
-    await expect(page.locator('text=มอส').last()).toBeVisible();
+    await expect(page.getByTestId('current-character-name')).toHaveText('มอส');
 
     // Switch to second character
-    await page.click('button:has(> svg[data-icon="chevron-right"])');
-    await expect(page.locator('text=มายา')).toBeVisible();
+    await page.getByTestId('next-character-button').click();
+    await expect(page.getByTestId('current-character-name')).toHaveText('มายา');
 
     // Send message as second character
-    await page.fill('input[placeholder*="พิมพ์ข้อความ"]', 'สวัสดีค่ะ');
-    await page.click('button:has-text("Send")');
+    await page.getByTestId('message-input').fill('สวัสดีค่ะ');
+    await page.getByTestId('send-button').click();
 
     // Verify message appears
     await expect(page.locator('text=สวัสดีค่ะ').last()).toBeVisible();
-    await expect(page.locator('text=มายา').last()).toBeVisible();
+    await expect(page.getByTestId('current-character-name')).toHaveText('มายา');
   });
 
   test('should add new character', async ({ page }) => {
     // Open settings
-    await page.click('button:has(> svg[data-icon="settings"])');
-    await expect(page.locator('text=ตั้งค่า')).toBeVisible();
+    await page.getByTestId('settings-button').click();
+    await expect(page.getByTestId('settings-modal')).toBeVisible();
 
     // Open add character modal
-    await page.click('text=เพิ่มตัวละครใหม่');
-    await expect(page.locator('text=เพิ่มตัวละครใหม่')).toBeVisible();
+    await page.getByTestId('add-character-button').click();
+    await expect(page.getByTestId('character-modal')).toBeVisible();
 
     // Fill character details
-    await page.fill('#characterId', 'new-char');
-    await page.fill('#characterName', 'ตัวละครทดสอบ');
-    await page.fill('#characterAvatar', '🤖');
-    await page.click('text=ม่วง');
-    await page.fill('#characterPersonality', 'ตัวละครสำหรับทดสอบระบบ');
+    await page.getByTestId('character-id-input').fill('new-char');
+    await page.getByTestId('character-name-input').fill('ตัวละครทดสอบ');
+    await page.getByTestId('character-avatar-input').fill('🤖');
+    await page.getByTestId('color-option-ม่วง').click();
+    await page.getByTestId('character-personality-input').fill('ตัวละครสำหรับทดสอบระบบ');
 
     // Submit
-    await page.click('text=เพิ่มตัวละคร');
+    await page.getByTestId('save-character-button').click();
 
     // Verify new character appears
-    await expect(page.locator('text=ตัวละครทดสอบ')).toBeVisible();
+    await expect(page.getByTestId('character-card-new-char')).toBeVisible();
 
-    // Switch to new character
-    await page.click('button:has(> svg[data-icon="chevron-right"])');
-    await page.click('button:has(> svg[data-icon="chevron-right"])');
-    await expect(page.locator('text=ตัวละครทดสอบ')).toBeVisible();
+    // Close settings
+    await page.getByTestId('close-settings-button').click();
+
+    // Switch to new character (skip system character)
+    await page.getByTestId('next-character-button').click(); // Move to Maya
+    await page.getByTestId('next-character-button').click(); // Move to System
+    await page.getByTestId('next-character-button').click(); // Move to New Character
+    await expect(page.getByTestId('current-character-name')).toHaveText('ตัวละครทดสอบ');
 
     // Send message as new character
-    await page.fill('input[placeholder*="พิมพ์ข้อความ"]', 'ข้อความทดสอบ');
-    await page.click('button:has-text("Send")');
+    await page.getByTestId('message-input').fill('ข้อความทดสอบ');
+    await page.getByTestId('send-button').click();
 
-    // Verify message styling
-    const lastMessageBubble = page.locator('.rounded-2xl').last();
-    await expect(lastMessageBubble).toHaveClass(/from-purple-400/);
+    // Verify message styling - use more specific selector
+    const newMessageBubble = page.locator('[data-testid^="message-bubble-"]:has-text("ข้อความทดสอบ")');
+    await expect(newMessageBubble).toHaveClass(/from-purple-400/);
   });
 
   test('should edit character', async ({ page }) => {
     // Open settings
-    await page.click('button:has(> svg[data-icon="settings"])');
+    await page.getByTestId('settings-button').click();
 
     // Open edit modal for Maya
-    await page.locator('text=มายา').first().hover();
-    await page.locator('button:has(> svg[data-icon="edit"])').first().click();
+    await page.getByTestId('character-card-2').hover();
+    await page.getByTestId('edit-character-2').click();
 
     // Edit details
-    await page.fill('#characterName', 'มายา (แก้ไขแล้ว)');
-    await page.click('text=ส้ม');
-    await page.fill('#characterPersonality', 'บุคลิกใหม่หลังแก้ไข');
+    await page.getByTestId('character-name-input').fill('มายา (แก้ไขแล้ว)');
+    await page.getByTestId('color-option-ส้ม').click();
+    await page.getByTestId('character-personality-input').fill('บุคลิกใหม่หลังแก้ไข');
 
     // Save changes
-    await page.click('text=บันทึกการแก้ไข');
+    await page.getByTestId('save-character-button').click();
 
     // Verify changes
-    await expect(page.locator('text=มายา (แก้ไขแล้ว)')).toBeVisible();
+    await expect(page.getByTestId('character-name-2')).toHaveText('มายา (แก้ไขแล้ว)');
 
-    // Switch to Maya and send message
-    await page.click('button:has(> svg[data-icon="chevron-right"])');
-    await page.fill('input[placeholder*="พิมพ์ข้อความ"]', 'ข้อความหลังแก้ไข');
-    await page.click('button:has-text("Send")');
+    // Close settings
+    await page.getByTestId('close-settings-button').click();
 
-    // Verify styling changed
-    const lastMessageBubble = page.locator('.rounded-2xl').last();
-    await expect(lastMessageBubble).toHaveClass(/from-orange-400/);
+    // Switch to Maya (skip system character)
+    await page.getByTestId('next-character-button').click(); // Move to Maya
+    await expect(page.getByTestId('current-character-name')).toHaveText('มายา (แก้ไขแล้ว)');
+
+    // Send message as Maya
+    await page.getByTestId('message-input').fill('ข้อความหลังแก้ไข');
+    await page.getByTestId('send-button').click();
+
+    // Verify styling changed - use more specific selector
+    const editedMessageBubble = page.locator('.rounded-2xl:has-text("ข้อความหลังแก้ไข")');
+    await expect(editedMessageBubble).toHaveClass(/from-orange-400/);
   });
 
   test('should delete character', async ({ page }) => {
-    // Open settings
-    await page.click('button:has(> svg[data-icon="settings"])');
+    // Add a character to delete (since initial characters are fixed)
+    await page.getByTestId('settings-button').click();
+    await page.getByTestId('add-character-button').click();
+    await page.getByTestId('character-id-input').fill('temp-char');
+    await page.getByTestId('character-name-input').fill('ตัวละครชั่วคราว');
+    await page.getByTestId('character-avatar-input').fill('👻');
+    await page.getByTestId('color-option-เทา').click();
+    await page.getByTestId('character-personality-input').fill('ตัวละครที่พร้อมจะถูกลบ');
+    await page.getByTestId('save-character-button').click();
+    await page.getByTestId('close-settings-button').click();
 
-    // Delete Maya
-    const mayaCard = page.locator('div:has-text("มายา")').first();
-    await mayaCard.hover();
-    await mayaCard.locator('button:has(> svg[data-icon="trash-2"])').click();
+    // Switch to the temporary character
+    await page.getByTestId('next-character-button').click(); // Maya
+    await page.getByTestId('next-character-button').click(); // System
+    await page.getByTestId('next-character-button').click(); // Temp character
+    await expect(page.getByTestId('current-character-name')).toHaveText('ตัวละครชั่วคราว');
+
+    // Open settings again
+    await page.getByTestId('settings-button').click();
+
+    // Delete the temporary character
+    const tempCard = page.getByTestId('character-card-temp-char');
+    await tempCard.hover();
+    await page.getByTestId('delete-character-temp-char').click();
 
     // Confirm deletion
     page.on('dialog', dialog => dialog.accept());
 
     // Verify deletion
-    await expect(page.locator('text=มายา')).not.toBeVisible();
+    await expect(page.getByTestId('character-card-temp-char')).not.toBeVisible();
 
-    // Verify character switching
-    await expect(page.locator('text=มอส')).toBeVisible();
-    await page.click('button:has(> svg[data-icon="chevron-right"])');
-    await expect(page.locator('text=ตัวละครทดสอบ')).toBeVisible();
+    // Close settings
+    await page.getByTestId('close-settings-button').click();
+
+    // Verify we're back to the first character
+    await expect(page.getByTestId('current-character-name')).toHaveText('มอส');
   });
 
   test('should update app settings', async ({ page }) => {
     // Open settings
-    await page.click('button:has(> svg[data-icon="settings"])');
+    await page.getByTestId('settings-button').click();
 
     // Update app config
-    await page.fill('#appTitle', 'แอพใหม่');
-    await page.fill('#appSubtitle', 'คำอธิบายใหม่');
+    await page.getByTestId('app-title-input').fill('แอปใหม่');
+    await page.getByTestId('app-subtitle-input').fill('คำอธิบายใหม่');
 
     // Toggle sound
-    await page.click('text=เปิด/ปิดเสียง');
+    await page.getByTestId('toggle-sound-button').click();
 
     // Close settings
-    await page.click('button:has(> svg[data-icon="x"])');
+    await page.getByTestId('close-settings-button').click();
 
     // Verify changes
-    await expect(page.locator('text=แอพใหม่')).toBeVisible();
-    await expect(page.locator('text=คำอธิบายใหม่')).toBeVisible();
+    await expect(page.getByTestId('app-title')).toHaveText('แอปใหม่');
+    await expect(page.getByTestId('app-subtitle')).toHaveText('คำอธิบายใหม่');
   });
 
   test('should prevent deleting system character', async ({ page }) => {
     // Open settings
-    await page.click('button:has(> svg[data-icon="settings"])');
+    await page.getByTestId('settings-button').click();
 
     // Try to delete system character
-    const systemCard = page.locator('div:has-text("ผู้เล่าเรื่อง")');
+    const systemCard = page.getByTestId('character-card-system');
     await systemCard.hover();
-    await expect(systemCard.locator('button:has(> svg[data-icon="trash-2"])')).not.toBeVisible();
+    await expect(page.getByTestId('delete-character-system')).not.toBeVisible();
   });
 });

@@ -2,7 +2,6 @@ import { test, expect } from '@playwright/test';
 
 // await page.waitForTimeout(8000); // รอ 8วิ หน่วยเป็นมิลลิวินาที
 
-
 test.describe('NovelChatAppModule', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -196,5 +195,121 @@ test.describe('NovelChatAppModule', () => {
     const systemCard = page.getByTestId('character-card-system');
     await systemCard.hover();
     await expect(page.getByTestId('delete-character-system')).not.toBeVisible();
+  });
+
+  test('should handle group conversation with time and location notifications', async ({ page }) => {
+    // สร้างตัวละครเพิ่ม 2 ตัว (รวมตัวละครเริ่มต้น 2 ตัว จะมีทั้งหมด 4 ตัว)
+    await page.getByTestId('settings-button').click();
+
+    // สร้างตัวละครที่ 3
+    await page.getByTestId('add-character-button').click();
+    await page.getByTestId('character-id-input').fill('char3');
+    await page.getByTestId('character-name-input').fill('นัท');
+    await page.getByTestId('character-avatar-input').fill('👨‍🎤');
+    await page.getByTestId('color-option-เขียว').click();
+    await page.getByTestId('character-personality-input').fill('ศิลปินอารมณ์ดี');
+    await page.getByTestId('save-character-button').click();
+
+    // สร้างตัวละครที่ 4
+    await page.getByTestId('add-character-button').click();
+    await page.getByTestId('character-id-input').fill('char4');
+    await page.getByTestId('character-name-input').fill('พลอย');
+    await page.getByTestId('character-avatar-input').fill('👩‍🎓');
+    await page.getByTestId('color-option-เหลือง').click();
+    await page.getByTestId('character-personality-input').fill('นักศึกษาจอมขยัน');
+    await page.getByTestId('save-character-button').click();
+
+    await page.getByTestId('close-settings-button').click();
+
+    // ระบบแจ้งสถานที่และเวลา (สุ่มสถานที่และเวลา)
+    const locations = ['ห้องสมุดมหาวิทยาลัย', 'คาเฟ่ย่านเมืองเก่า', 'สวนสาธารณะกลางเมือง', 'หอพักนักศึกษา'];
+    const times = ['🌞 เช้าวันจันทร์ที่สดใส', '🌆 ยามเย็นวันศุกร์', '🌙 คืนวันเสาร์อันเงียบสงบ', '☀️ ตอนเที่ยงวันอาทิตย์'];
+
+    const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+    const randomTime = times[Math.floor(Math.random() * times.length)];
+    const systemMessage1 = `${randomTime} ใน${randomLocation}`;
+
+    // ตรวจสอบจำนวนข้อความเริ่มต้น
+    const initialMessages = await page.locator('[data-testid^="message-bubble-"], [data-testid="system-message"]').count();
+
+    // ส่งข้อความระบบผ่านการเพิ่มโดยตรง
+    await page.evaluate((message) => {
+      const messagesContainer = document.querySelector('[data-testid="messages-container"]');
+      if (messagesContainer) {
+        const systemMessage = document.createElement('div');
+        systemMessage.innerHTML = `
+        <div data-testid="system-message" class="flex justify-center my-2">
+          <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 text-sm max-w-[90%] text-center">
+            <p class="whitespace-pre-wrap">${message}</p>
+          </div>
+        </div>
+      `;
+        messagesContainer.appendChild(systemMessage);
+      }
+    }, systemMessage1);
+
+    // ตรวจสอบข้อความระบบ
+    await expect(page.locator(`text=${randomLocation}`).first()).toBeVisible();
+    await expect(page.locator(`text=${randomTime.split(' ')[0]}`).first()).toBeVisible();
+
+    // สนทนากลุ่ม - ตัวละครที่ 1 (มอส)
+    await page.getByTestId('next-character-button').click(); // ไปมอส
+    await page.getByTestId('message-input').fill('ทุกคนได้ยินข่าวลือเรื่องห้องสมุดตอนดึกมั้ย?');
+    await page.getByTestId('send-button').click();
+
+    // ตัวละครที่ 2 (มายา)
+    await page.getByTestId('next-character-button').click(); // ไปมายา
+    await page.getByTestId('message-input').fill('ฉันได้ยินมาว่ามีบางคนเห็นเงารูปแปลกๆ ในห้องสมุดตอนเที่ยงคืน!');
+    await page.getByTestId('send-button').click();
+
+    // ตัวละครที่ 3 (นัท)
+    await page.getByTestId('next-character-button').click(); // ไปนัท
+    await page.getByTestId('message-input').fill('ไม่นะ! ผมต้องมาทำงานตอนดึกบ่อยๆ นะเนี่ย 😱');
+    await page.getByTestId('send-button').click();
+
+    // ตัวละครที่ 4 (พลอย)
+    await page.getByTestId('next-character-button').click(); // ไปพลอย
+    await page.getByTestId('message-input').fill('ฉันไม่เชื่อเรื่องแบบนั้นหรอก น่าจะเป็นแค่แสงเงาปกติ');
+    await page.getByTestId('send-button').click();
+
+    // ระบบแจ้งเวลาเปลี่ยน
+    const newTimes = ['🌙 ดึกแล้ว... ใกล้ถึงเวลาปิด', '🌃 ตอนนี้ดึกมากแล้ว', '🕛 เที่ยงคืนพอดี', '🌌 เวลาดึกสงัด'];
+    const newRandomTime = newTimes[Math.floor(Math.random() * newTimes.length)];
+    const systemMessage2 = newRandomTime;
+
+    // ส่งข้อความระบบผ่านการเพิ่มโดยตรง
+    await page.evaluate((message) => {
+      const messagesContainer = document.querySelector('[data-testid="messages-container"]');
+      if (messagesContainer) {
+        const systemMessage = document.createElement('div');
+        systemMessage.innerHTML = `
+        <div data-testid="system-message" class="flex justify-center my-2">
+          <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 text-sm max-w-[90%] text-center">
+            <p class="whitespace-pre-wrap">${message}</p>
+          </div>
+        </div>
+      `;
+        messagesContainer.appendChild(systemMessage);
+      }
+    }, systemMessage2);
+
+    // ตรวจสอบข้อความระบบใหม่
+    await expect(page.locator(`text=${newRandomTime.split(' ')[0]}`).last()).toBeVisible();
+
+    // มอสตอบกลับอีกครั้ง
+    await page.getByTestId('next-character-button').click(); // ไปมอส
+    await page.getByTestId('message-input').fill('ตอนนี้ได้ยินเสียงประหลาดมาจากชั้นบนด้วย... ใครจะไปดูมั้ย?');
+    await page.getByTestId('send-button').click();
+
+    // ตรวจสอบจำนวนข้อความที่เพิ่มขึ้น
+    const finalMessages = await page.locator('[data-testid^="message-bubble-"], [data-testid="system-message"]').count();
+    expect(finalMessages).toBe(initialMessages + 7); // 7 ข้อความใหม่
+
+    // ตรวจสอบข้อความสุดท้าย
+    await expect(page.locator('text=เสียงประหลาด').last()).toBeVisible();
+
+    // ตรวจสอบว่าข้อความระบบมี 2 ข้อความใหม่
+    const newSystemMessages = await page.locator('[data-testid="system-message"]').count();
+    expect(newSystemMessages).toBeGreaterThanOrEqual(2);
   });
 });

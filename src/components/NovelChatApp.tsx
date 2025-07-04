@@ -133,6 +133,7 @@ const MobileCharacterSelector = ({
                 disabled={disabled}
                 className="p-2 rounded-full bg-white border border-gray-200 disabled:opacity-50"
                 data-testid="prev-character-button"
+                aria-label="Previous character"
             >
                 <ChevronLeft size={18} />
             </button>
@@ -150,6 +151,7 @@ const MobileCharacterSelector = ({
                 disabled={disabled}
                 className="p-2 rounded-full bg-white border border-gray-200 disabled:opacity-50"
                 data-testid="next-character-button"
+                aria-label="Next character"
             >
                 <ChevronRight size={18} />
             </button>
@@ -173,6 +175,7 @@ const ColorOption = ({
             className={`flex items-center space-x-2 p-2 rounded-lg border transition-colors
         ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'}`}
             data-testid={`color-option-${color.name}`}
+            aria-label={`Select ${color.name} color`}
         >
             <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${color.value}`}></div>
             <span className="text-sm">{color.name}</span>
@@ -233,6 +236,9 @@ const NovelChatApp: React.FC = () => {
     });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // ตรวจสอบว่าเป็นอุปกรณ์ Mobile หรือไม่
+    const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
 
     // Default values for new character form
     const defaultCharacterValues = {
@@ -387,9 +393,15 @@ const NovelChatApp: React.FC = () => {
         <div
             className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 text-gray-800 font-inter antialiased"
             data-testid="novel-chat-app"
+            style={{
+                height: isMobile ? '100dvh' : '100vh',
+                maxHeight: isMobile ? '100dvh' : '100vh',
+            }}
         >
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-lg p-3 sm:p-4 border-b border-gray-200 shadow-sm">
+            {/* Header - แก้ไข safe area */}
+            <div
+                className="safe-sticky z-10 bg-white/90 backdrop-blur-lg p-3 sm:p-4 border-b border-gray-200 shadow-sm flex-shrink-0"
+            >
                 <div className="max-w-3xl mx-auto w-full">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -409,16 +421,14 @@ const NovelChatApp: React.FC = () => {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center space-x-3">
-                            <button
-                                onClick={() => setShowSettings(true)}
-                                className="p-1.5 sm:p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors duration-200"
-                                aria-label="Settings"
-                                data-testid="settings-button"
-                            >
-                                <Settings size={18} />
-                            </button>
-                        </div>
+                        <button
+                            onClick={() => setShowSettings(true)}
+                            className="p-1.5 sm:p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors duration-200"
+                            aria-label="Settings"
+                            data-testid="settings-button"
+                        >
+                            <Settings size={18} />
+                        </button>
                     </div>
                 </div>
             </div>
@@ -427,11 +437,14 @@ const NovelChatApp: React.FC = () => {
             <div
                 className="flex-1 overflow-y-auto p-3 sm:p-4 max-w-3xl mx-auto w-full space-y-2 sm:space-y-4"
                 data-testid="messages-container"
+                style={{
+                    WebkitOverflowScrolling: 'touch', // สำหรับ iOS
+                    overscrollBehavior: 'contain',   // ป้องกัน bounce effect
+                }}
             >
                 {messages.map((msg) => {
                     const character = getCharacterById(msg.sender);
                     const isCurrentSpeaker = msg.sender === currentSpeaker;
-
                     return (
                         <div key={msg.id} className="space-y-1 sm:space-y-2">
                             <MessageBubble
@@ -442,12 +455,16 @@ const NovelChatApp: React.FC = () => {
                         </div>
                     );
                 })}
-
                 <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
-            <div className="sticky bottom-0 z-10 p-3 sm:p-4 bg-white/90 border-t border-gray-200 backdrop-blur-lg">
+            <div
+                className="sticky bottom-0 z-10 p-3 sm:p-4 bg-white/90 border-t border-gray-200 backdrop-blur-lg"
+                style={{
+                    transform: 'translateZ(0)', // ป้องกัน flickering บน iOS
+                }}
+            >
                 <div className="max-w-3xl mx-auto">
                     {/* Mobile Character Selector */}
                     <MobileCharacterSelector
@@ -491,6 +508,13 @@ const NovelChatApp: React.FC = () => {
                 <div
                     className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-3 sm:p-4"
                     data-testid="settings-modal"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setShowSettings(false);
+                    }}
+                    style={{
+                        touchAction: 'none', // ป้องกันการเลื่อนขณะ modal เปิด
+                        overscrollBehavior: 'contain',
+                    }}
                 >
                     <div className="bg-white p-4 sm:p-6 rounded-xl shadow-2xl w-full max-w-md relative border border-gray-300 max-h-[90vh] overflow-y-auto">
                         <button
@@ -622,6 +646,13 @@ const NovelChatApp: React.FC = () => {
                 <div
                     className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-3 sm:p-4"
                     data-testid="character-modal"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setShowAddCharacterModal(false);
+                    }}
+                    style={{
+                        touchAction: 'none',
+                        overscrollBehavior: 'contain',
+                    }}
                 >
                     <div className="bg-white p-4 sm:p-6 rounded-xl shadow-2xl w-full max-w-md relative border border-gray-300 max-h-[90vh] overflow-y-auto">
                         <button

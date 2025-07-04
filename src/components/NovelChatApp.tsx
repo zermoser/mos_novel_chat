@@ -318,7 +318,7 @@ const NovelChatApp: React.FC = () => {
         setInput('');
 
         if (soundEnabled) {
-            const audio = new Audio('/sound/sendPop.mp3');
+            const audio = new Audio('https://zermoser.github.io/mos_novel_chat/sound/sendPop.mp3');
             audio.play().catch(e => console.error("Error playing sound:", e));
         }
     };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Clock, Settings, PlusCircle, Edit, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Send, Clock, Settings, PlusCircle, Edit, Trash2, X, ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 
 // Interface definitions
 interface Message {
@@ -528,62 +528,6 @@ const NovelChatApp: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* System Settings */}
-                        <div className="mb-4 sm:mb-6 bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
-                            <h3 className="text-md sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-700">ตั้งค่าผู้เล่าเรื่อง</h3>
-                            <div className="space-y-3">
-                                <div>
-                                    <label htmlFor="systemName" className="block text-sm text-gray-700 mb-1">ชื่อผู้เล่าเรื่อง:</label>
-                                    <input
-                                        id="systemName"
-                                        type="text"
-                                        value={appConfig.systemName}
-                                        onChange={(e) => setAppConfig({ ...appConfig, systemName: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="systemAvatar" className="block text-sm text-gray-700 mb-1">อวตาร (Emoji):</label>
-                                    <input
-                                        id="systemAvatar"
-                                        type="text"
-                                        value={appConfig.systemAvatar}
-                                        onChange={(e) => setAppConfig({ ...appConfig, systemAvatar: e.target.value })}
-                                        maxLength={2}
-                                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">สี:</label>
-                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                                        {colorOptions.map((color, index) => (
-                                            <ColorOption
-                                                key={index}
-                                                color={color}
-                                                selected={appConfig.systemColor === color.value}
-                                                onSelect={() => setAppConfig({ ...appConfig, systemColor: color.value })}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* General Settings */}
-                        <div className="mb-4 sm:mb-6 bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
-                            <h3 className="text-md sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-700">ทั่วไป</h3>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">เปิด/ปิดเสียง:</span>
-                                <button
-                                    onClick={() => setSoundEnabled(!soundEnabled)}
-                                    className={`px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm rounded-full transition-colors shadow-md
-                  ${soundEnabled ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
-                                >
-                                    {soundEnabled ? 'เปิด' : 'ปิด'}
-                                </button>
-                            </div>
-                        </div>
-
                         {/* Character Management */}
                         <div className="mb-4 sm:mb-6 bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
                             <h3 className="text-md sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-700">จัดการตัวละคร</h3>
@@ -631,12 +575,23 @@ const NovelChatApp: React.FC = () => {
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => setShowSettings(false)}
-                            className="w-full mt-4 bg-gray-800 hover:bg-gray-900 text-white py-2 rounded-lg font-medium transition-colors shadow-lg text-sm sm:text-base"
-                        >
-                            ปิด
-                        </button>
+                        {/* General Settings */}
+                        <div className="mb-4 sm:mb-6 bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+                            <h3 className="text-md sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-700">ทั่วไป</h3>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">เปิด/ปิดเสียง:</span>
+                                <button
+                                    onClick={() => setSoundEnabled(!soundEnabled)}
+                                    className={`px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm rounded-full transition-colors shadow-md
+        ${soundEnabled ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                                        <span>{soundEnabled ? 'เปิด' : 'ปิด'}</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

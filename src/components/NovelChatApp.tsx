@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Clock, Settings, PlusCircle, Edit, Trash2, X, ChevronLeft, ChevronRight, Volume2, VolumeX, Users, AppWindow, Text } from 'lucide-react';
+import { Send, Settings, PlusCircle, Edit, Trash2, X, ChevronLeft, ChevronRight, Volume2, VolumeX, Users, AppWindow, Text } from 'lucide-react';
 
 // Interface definitions
 interface Message {
     id: number;
     sender: string;
     text: string;
-    timestamp: Date;
-    emotion?: 'happy' | 'sad' | 'love' | 'angry' | 'excited';
-    reactions?: number;
+    timestamp?: Date;
     isRead?: boolean;
 }
 
@@ -46,20 +44,12 @@ const MessageBubble = ({
     character?: Character;
     isCurrentSpeaker: boolean;
 }) => {
-    const emotionEmojis = {
-        happy: '😊',
-        sad: '😢',
-        love: '💕',
-        angry: '😤',
-        excited: '🎉'
-    };
-
-    const formatTime = (date: Date) => {
-        return date.toLocaleTimeString('th-TH', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
+    // const formatTime = (date: Date) => {
+    //     return date.toLocaleTimeString('th-TH', {
+    //         hour: '2-digit',
+    //         minute: '2-digit'
+    //     });
+    // };
 
     // Center system messages
     if (message.sender === 'system') {
@@ -67,10 +57,10 @@ const MessageBubble = ({
             <div className="flex justify-center my-2">
                 <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 text-sm max-w-[90%] text-center">
                     <p className="whitespace-pre-wrap">{message.text}</p>
-                    <div className="flex items-center justify-center mt-1 text-amber-700 text-xs">
+                    {/* <div className="flex items-center justify-center mt-1 text-amber-700 text-xs">
                         <Clock size={12} className="inline-block mr-1" />
                         {formatTime(message.timestamp)}
-                    </div>
+                    </div> */}
                 </div>
             </div>
         );
@@ -93,20 +83,17 @@ const MessageBubble = ({
                         <span className={`text-xs font-medium ${isCurrentSpeaker ? 'text-white/80' : 'text-gray-600'}`}>
                             {character.name}
                         </span>
-                        {message.emotion && (
-                            <span className="text-sm">{emotionEmojis[message.emotion]}</span>
-                        )}
                     </div>
                 )}
 
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
 
-                <div className={`flex items-center justify-between mt-2 ${isCurrentSpeaker ? 'text-white/70' : 'text-gray-500'}`}>
-                    <span className="text-xs flex items-center">
-                        <Clock size={12} className="inline-block mr-1" />
+                {/* <div className={`flex items-center justify-between mt-2 ${isCurrentSpeaker ? 'text-white/70' : 'text-gray-500'}`}>
+                    <span className="text-[8px] flex items-center">
+                        <Clock size={8} className="inline-block mr-1" />
                         {formatTime(message.timestamp)}
                     </span>
-                </div>
+                </div> */}
             </div>
 
             {isCurrentSpeaker && character && (
@@ -290,7 +277,7 @@ const NovelChatApp: React.FC = () => {
                 id: 1,
                 sender: 'system',
                 text: '📖 เรื่องราวของเรากำลังจะเริ่มต้น...',
-                timestamp: new Date(Date.now() - 300000),
+                // timestamp: new Date(Date.now() - 300000),
                 isRead: true
             };
             setMessages([initialMessage]);
@@ -326,9 +313,7 @@ const NovelChatApp: React.FC = () => {
             id: Date.now(),
             sender: currentSpeaker,
             text: text.trim(),
-            timestamp: new Date(),
-            emotion: 'happy',
-            reactions: 0,
+            // timestamp: new Date(),
             isRead: true
         };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Clock, Settings, PlusCircle, Edit, Trash2, X, ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
+import { Send, Clock, Settings, PlusCircle, Edit, Trash2, X, ChevronLeft, ChevronRight, Volume2, VolumeX, Users, AppWindow, Text } from 'lucide-react';
 
 // Interface definitions
 interface Message {
@@ -205,7 +205,7 @@ const NovelChatApp: React.FC = () => {
     // Configurable app settings
     const [appConfig, setAppConfig] = useState({
         title: 'Novel Chat',
-        subtitle: 'เรื่องราวแห่งความรักที่เลือกได้',
+        subtitle: 'เรื่องหลอน ๆ ของ Dev นอนน้อย',
         systemName: 'ผู้เล่าเรื่อง',
         systemAvatar: '📚',
         systemColor: 'from-amber-400 to-orange-500'
@@ -218,19 +218,19 @@ const NovelChatApp: React.FC = () => {
     const [characters, setCharacters] = useState<Character[]>([
         {
             id: '1',
-            name: 'มายา',
-            avatar: '🌸',
+            name: 'มอส',
+            avatar: '👨‍💻',
             status: 'online',
-            color: 'from-pink-400 to-rose-500',
-            personality: 'นักเขียนสาวผู้เปี่ยมด้วยจินตนาการ'
+            color: 'from-blue-400 to-indigo-500',
+            personality: 'โปรแกรมเมอร์นอนน้อย'
         },
         {
             id: '2',
-            name: 'อเล็กซ์',
-            avatar: '🎭',
+            name: 'มายา',
+            avatar: '👩‍💻',
             status: 'online',
-            color: 'from-blue-400 to-indigo-500',
-            personality: 'นักดนตรีหนุ่มผู้ลึกลับ'
+            color: 'from-pink-400 to-rose-500',
+            personality: 'นักทดสอบระบบจอมระเบียบ'
         },
         {
             id: 'system',
@@ -506,7 +506,10 @@ const NovelChatApp: React.FC = () => {
                             <h3 className="text-md sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-700">การตั้งค่าแอพ</h3>
                             <div className="space-y-2">
                                 <div>
-                                    <label htmlFor="appTitle" className="block text-sm text-gray-700 mb-1">ชื่อแอพ:</label>
+                                    <label htmlFor="appTitle" className="text-sm text-gray-700 mb-1 flex items-center gap-1.5">
+                                        <AppWindow size={14} />
+                                        ชื่อแอพ:
+                                    </label>
                                     <input
                                         id="appTitle"
                                         type="text"
@@ -516,7 +519,10 @@ const NovelChatApp: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="appSubtitle" className="block text-sm text-gray-700 mb-1">คำอธิบาย:</label>
+                                    <label htmlFor="appSubtitle" className="text-sm text-gray-700 mb-1 flex items-center gap-1.5">
+                                        <Text size={14} />
+                                        คำอธิบาย:
+                                    </label>
                                     <input
                                         id="appSubtitle"
                                         type="text"
@@ -527,10 +533,13 @@ const NovelChatApp: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-
                         {/* Character Management */}
                         <div className="mb-4 sm:mb-6 bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
-                            <h3 className="text-md sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-700">จัดการตัวละคร</h3>
+                            <h3 className="text-md sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-700 flex items-center gap-2">
+                                <Users size={18} />
+                                จัดการตัวละคร
+                            </h3>
+
                             <button
                                 onClick={openAddCharacterModal}
                                 className="w-full flex items-center justify-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors shadow-md mb-3 text-sm sm:text-base"
@@ -538,9 +547,13 @@ const NovelChatApp: React.FC = () => {
                                 <PlusCircle size={16} />
                                 <span>เพิ่มตัวละครใหม่</span>
                             </button>
+
                             <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                                 {characters.map((char) => (
-                                    <div key={char.id} className="flex items-center justify-between bg-white p-2 sm:p-3 rounded-lg border border-gray-200 shadow-sm">
+                                    <div
+                                        key={char.id}
+                                        className="flex items-center justify-between bg-white p-2 sm:p-3 rounded-lg border border-gray-200 shadow-sm"
+                                    >
                                         <div className="flex items-center space-x-2">
                                             <CharacterAvatar character={char} size="sm" />
                                             <div>
@@ -577,7 +590,6 @@ const NovelChatApp: React.FC = () => {
 
                         {/* General Settings */}
                         <div className="mb-4 sm:mb-6 bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
-                            <h3 className="text-md sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-700">ทั่วไป</h3>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-gray-600">เปิด/ปิดเสียง:</span>
                                 <button
@@ -631,7 +643,7 @@ const NovelChatApp: React.FC = () => {
                                     value={newCharacter.name}
                                     onChange={(e) => setNewCharacter({ ...newCharacter, name: e.target.value })}
                                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-                                    placeholder="เช่น มายา, อเล็กซ์"
+                                    placeholder="เช่น มายา, มอส"
                                 />
                             </div>
                             <div>

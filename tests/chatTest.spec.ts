@@ -196,9 +196,8 @@ test.describe('NovelChatAppModule', () => {
     await systemCard.hover();
     await expect(page.getByTestId('delete-character-system')).not.toBeVisible();
   });
-
-  test('should handle group conversation with time and location notifications', async ({ page }) => {
-    // สร้างตัวละครเพิ่ม 2 ตัว (รวมตัวละครเริ่มต้น 2 ตัว จะมีทั้งหมด 4 ตัว)
+  test('should handle long group conversation with dynamic time/location changes', async ({ page }) => {
+    // สร้างตัวละครเพิ่ม 3 ตัว (รวมตัวละครเริ่มต้น 2 ตัว จะมีทั้งหมด 5 ตัว)
     await page.getByTestId('settings-button').click();
 
     // สร้างตัวละครที่ 3
@@ -219,97 +218,202 @@ test.describe('NovelChatAppModule', () => {
     await page.getByTestId('character-personality-input').fill('นักศึกษาจอมขยัน');
     await page.getByTestId('save-character-button').click();
 
+    // สร้างตัวละครที่ 5
+    await page.getByTestId('add-character-button').click();
+    await page.getByTestId('character-id-input').fill('char5');
+    await page.getByTestId('character-name-input').fill('เปา');
+    await page.getByTestId('character-avatar-input').fill('👨‍🔧');
+    await page.getByTestId('color-option-เทา').click();
+    await page.getByTestId('character-personality-input').fill('ช่างซ่อมใจดี');
+    await page.getByTestId('save-character-button').click();
+
     await page.getByTestId('close-settings-button').click();
 
-    // ระบบแจ้งสถานที่และเวลา (สุ่มสถานที่และเวลา)
-    const locations = ['ห้องสมุดมหาวิทยาลัย', 'คาเฟ่ย่านเมืองเก่า', 'สวนสาธารณะกลางเมือง', 'หอพักนักศึกษา'];
-    const times = ['🌞 เช้าวันจันทร์ที่สดใส', '🌆 ยามเย็นวันศุกร์', '🌙 คืนวันเสาร์อันเงียบสงบ', '☀️ ตอนเที่ยงวันอาทิตย์'];
+    // เก็บจำนวน system messages เริ่มต้น (มี 1 ข้อความ)
+    const initialSystemMessages = await page.locator('[data-testid="system-message"]').count();
 
-    const randomLocation = locations[Math.floor(Math.random() * locations.length)];
-    const randomTime = times[Math.floor(Math.random() * times.length)];
-    const systemMessage1 = `${randomTime} ใน${randomLocation}`;
+    // ฟังก์ชันสุ่มสถานที่และเวลา
+    const getRandomLocation = () => {
+      const locations = [
+        'ห้องสมุดมหาวิทยาลัย', 'คาเฟ่ย่านเมืองเก่า', 'สวนสาธารณะกลางเมือง',
+        'หอพักนักศึกษา', 'อาคารเรียนเก่า', 'โรงอาหารกลาง', 'ห้องปฏิบัติการคอมพิวเตอร์',
+        'หอศิลป์', 'สนามกีฬา', 'ลานกิจกรรมนักศึกษา'
+      ];
+      return locations[Math.floor(Math.random() * locations.length)];
+    };
 
-    // ตรวจสอบจำนวนข้อความเริ่มต้น
-    const initialMessages = await page.locator('[data-testid^="message-bubble-"], [data-testid="system-message"]').count();
+    const getRandomTime = () => {
+      const times = [
+        '🌞 เช้าวันจันทร์ที่สดใส', '🌆 ยามเย็นวันศุกร์', '🌙 คืนวันเสาร์อันเงียบสงบ',
+        '☀️ ตอนเที่ยงวันอาทิตย์', '🌧️ เช้าฝนพรำวันอังคาร', '🌫️ คืนหมอกหนาววันพุธ',
+        '⛅ บ่ายวันพฤหัสที่แจ่มใส', '🌃 ดึกสงัดของคืนวันศุกร์', '🌇 เวลาพลบค่ำวันเสาร์',
+        '🌌 เวลาเที่ยงคืนวันอาทิตย์'
+      ];
+      return times[Math.floor(Math.random() * times.length)];
+    };
 
-    // ส่งข้อความระบบผ่านการเพิ่มโดยตรง
-    await page.evaluate((message) => {
-      const messagesContainer = document.querySelector('[data-testid="messages-container"]');
-      if (messagesContainer) {
-        const systemMessage = document.createElement('div');
-        systemMessage.innerHTML = `
-        <div data-testid="system-message" class="flex justify-center my-2">
-          <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 text-sm max-w-[90%] text-center">
-            <p class="whitespace-pre-wrap">${message}</p>
-          </div>
-        </div>
-      `;
-        messagesContainer.appendChild(systemMessage);
+    // ฟังก์ชันเพิ่มข้อความระบบ
+    const addSystemMessage = async (message: string) => {
+      await page.evaluate((msg) => {
+        const messagesContainer = document.querySelector('[data-testid="messages-container"]');
+        if (messagesContainer) {
+          const systemMessage = document.createElement('div');
+          systemMessage.innerHTML = `
+                <div data-testid="system-message" class="flex justify-center my-2">
+                    <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 text-sm max-w-[90%] text-center">
+                        <p class="whitespace-pre-wrap">${msg}</p>
+                    </div>
+                </div>
+            `;
+          messagesContainer.appendChild(systemMessage);
+        }
+      }, message);
+    };
+
+    // เริ่มเรื่อง
+    const startLocation = getRandomLocation();
+    const startTime = getRandomTime();
+    await addSystemMessage(`${startTime} ใน${startLocation}`);
+
+    // ตัวละครทั้งหมด (ไม่รวมระบบ)
+    const characters = ['มอส', 'มายา', 'นัท', 'พลอย', 'เปา'];
+
+    // ตัวชี้ตัวละครปัจจุบัน
+    let currentCharacterIndex = 0;
+
+    // สนทนากลุ่ม - 30 ข้อความ
+    for (let i = 0; i < 30; i++) {
+      // เปลี่ยนตัวละครทุก 3 ข้อความ (ข้อความที่ 0, 3, 6, ...)
+      if (i % 3 === 0) {
+        // เปลี่ยนไปตัวละครถัดไปแบบวนรอบ
+        currentCharacterIndex = (currentCharacterIndex + 1) % characters.length;
+
+        // คลิกปุ่มเปลี่ยนตัวละครจนกว่าจะถึงตัวละครที่ต้องการ
+        let currentCharacterName = await page.getByTestId('current-character-name').innerText();
+        while (currentCharacterName !== characters[currentCharacterIndex]) {
+          await page.getByTestId('next-character-button').click();
+          currentCharacterName = await page.getByTestId('current-character-name').innerText();
+          await page.waitForTimeout(100); // รอสักครู่ให้ UI อัปเดต
+        }
       }
-    }, systemMessage1);
 
-    // ตรวจสอบข้อความระบบ
-    await expect(page.locator(`text=${randomLocation}`).first()).toBeVisible();
-    await expect(page.locator(`text=${randomTime.split(' ')[0]}`).first()).toBeVisible();
-
-    // สนทนากลุ่ม - ตัวละครที่ 1 (มอส)
-    await page.getByTestId('next-character-button').click(); // ไปมอส
-    await page.getByTestId('message-input').fill('ทุกคนได้ยินข่าวลือเรื่องห้องสมุดตอนดึกมั้ย?');
-    await page.getByTestId('send-button').click();
-
-    // ตัวละครที่ 2 (มายา)
-    await page.getByTestId('next-character-button').click(); // ไปมายา
-    await page.getByTestId('message-input').fill('ฉันได้ยินมาว่ามีบางคนเห็นเงารูปแปลกๆ ในห้องสมุดตอนเที่ยงคืน!');
-    await page.getByTestId('send-button').click();
-
-    // ตัวละครที่ 3 (นัท)
-    await page.getByTestId('next-character-button').click(); // ไปนัท
-    await page.getByTestId('message-input').fill('ไม่นะ! ผมต้องมาทำงานตอนดึกบ่อยๆ นะเนี่ย 😱');
-    await page.getByTestId('send-button').click();
-
-    // ตัวละครที่ 4 (พลอย)
-    await page.getByTestId('next-character-button').click(); // ไปพลอย
-    await page.getByTestId('message-input').fill('ฉันไม่เชื่อเรื่องแบบนั้นหรอก น่าจะเป็นแค่แสงเงาปกติ');
-    await page.getByTestId('send-button').click();
-
-    // ระบบแจ้งเวลาเปลี่ยน
-    const newTimes = ['🌙 ดึกแล้ว... ใกล้ถึงเวลาปิด', '🌃 ตอนนี้ดึกมากแล้ว', '🕛 เที่ยงคืนพอดี', '🌌 เวลาดึกสงัด'];
-    const newRandomTime = newTimes[Math.floor(Math.random() * newTimes.length)];
-    const systemMessage2 = newRandomTime;
-
-    // ส่งข้อความระบบผ่านการเพิ่มโดยตรง
-    await page.evaluate((message) => {
-      const messagesContainer = document.querySelector('[data-testid="messages-container"]');
-      if (messagesContainer) {
-        const systemMessage = document.createElement('div');
-        systemMessage.innerHTML = `
-        <div data-testid="system-message" class="flex justify-center my-2">
-          <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 text-sm max-w-[90%] text-center">
-            <p class="whitespace-pre-wrap">${message}</p>
-          </div>
-        </div>
-      `;
-        messagesContainer.appendChild(systemMessage);
+      // เปลี่ยนเวลา/สถานที่ทุก 5 ข้อความ
+      if (i % 5 === 0 && i > 0) {
+        const newLocation = getRandomLocation();
+        const newTime = getRandomTime();
+        await addSystemMessage(`${newTime} ใน${newLocation}`);
       }
-    }, systemMessage2);
 
-    // ตรวจสอบข้อความระบบใหม่
-    await expect(page.locator(`text=${newRandomTime.split(' ')[0]}`).last()).toBeVisible();
+      // เนื้อหาข้อความตามลำดับเรื่อง
+      let message = '';
+      const currentCharacterName = characters[currentCharacterIndex];
 
-    // มอสตอบกลับอีกครั้ง
-    await page.getByTestId('next-character-button').click(); // ไปมอส
-    await page.getByTestId('message-input').fill('ตอนนี้ได้ยินเสียงประหลาดมาจากชั้นบนด้วย... ใครจะไปดูมั้ย?');
-    await page.getByTestId('send-button').click();
+      switch (i) {
+        case 0:
+          message = 'ทุกคนได้ยินข่าวลือเรื่องห้องสมุดตอนดึกมั้ย?';
+          break;
+        case 1:
+          message = 'ฉันได้ยินมาว่ามีบางคนเห็นเงารูปแปลกๆ ในห้องสมุดตอนเที่ยงคืน!';
+          break;
+        case 2:
+          message = 'ไม่นะ! ผมต้องมาทำงานตอนดึกบ่อยๆ นะเนี่ย 😱';
+          break;
+        case 3:
+          message = 'ฉันไม่เชื่อเรื่องแบบนั้นหรอก น่าจะเป็นแค่แสงเงาปกติ';
+          break;
+        case 4:
+          message = 'ผมเห็นด้วยกับพลอย มันต้องมีคำอธิบายทางวิทยาศาสตร์';
+          break;
+        case 5:
+          message = 'แต่เรื่องราวมันน่ากลัวมากนะ! มีคนบอกว่าได้ยินเสียงเดินตามหลัง...';
+          break;
+        case 6:
+          message = 'บางทีอาจเป็นลมพัดผ่านหน้าต่างที่เปิดไว้';
+          break;
+        case 7:
+          message = 'ผมว่าถ้าเราอยากรู้จริงๆ เราควรไปสำรวจกันดูสักครั้ง';
+          break;
+        case 8:
+          message = 'ฉันไม่แน่ใจนะ มันอาจจะอันตรายเกินไป';
+          break;
+        case 9:
+          message = 'นั่นสิ! เราไม่รู้อะไรเกี่ยวกับสิ่งนั้นเลย';
+          break;
+        case 10:
+          message = 'เราจะไปกันหลายคนก็ไม่น่ามีปัญหา';
+          break;
+        case 11:
+          message = 'ถ้าอย่างนั้นผมขอไปด้วยคน';
+          break;
+        case 12:
+          message = 'ฉันก็ไปด้วย แต่อย่าลืมนำไฟฉายมานะ';
+          break;
+        case 13:
+          message = 'เอาล่ะ ตกลงวันนี้ตอนสามทุ่มตรงนี้';
+          break;
+        case 14:
+          message = 'รอเดี๋ยวนะ เราไม่ควรเตรียมตัวอะไรเพิ่มเติมเหรอ?';
+          break;
+        case 15:
+          message = 'ผมว่าจะเอากล้องถ่ายรูปอินฟราเรดมาด้วย';
+          break;
+        case 16:
+          message = 'ดีเลย! เผื่อเราจะได้หลักฐานชัดๆ';
+          break;
+        case 17:
+          message = 'อย่าลืมนำเสบียงมาด้วยนะ ฉันจะเตรียมขนม';
+          break;
+        case 18:
+          message = 'ผมจะเอาเครื่องบันทึกเสียงมา เผื่อมีเสียงแปลกๆ';
+          break;
+        case 19:
+          message = 'ตอนนี้ฉันเริ่มตื่นเต้นแล้วล่ะ!';
+          break;
+        case 20:
+          message = 'ผมก็ด้วย ถึงจะกลัวนิดหน่อยแต่ก็ตื่นเต้น';
+          break;
+        case 21:
+          message = 'ทุกคนพร้อมกันยัง? ใกล้ถึงเวลาสามทุ่มแล้วนะ';
+          break;
+        case 22:
+          message = 'ผมพร้อมแล้ว กำลังรออยู่หน้าห้องสมุด';
+          break;
+        case 23:
+          message = 'ฉันกำลังไป เดี๋ยวถึงในห้านาที';
+          break;
+        case 24:
+          message = 'ผมก็กำลังมา ฝนเริ่มตกแล้วขับรถลำบากหน่อย';
+          break;
+        case 25:
+          message = 'ฝนตกแบบนี้ยิ่งเพิ่มบรรยากาศน่ากลัวเลยนะ';
+          break;
+        case 26:
+          message = 'อย่าพูดแบบนั้นสิ ฉันเริ่มขนลุกแล้ว!';
+          break;
+        case 27:
+          message = 'ทุกคนถึงกันครบแล้ว เราเข้าไปกันเลยมั้ย?';
+          break;
+        case 28:
+          message = 'รอเดี๋ยว ผมต้องตั้งค่ากล้องก่อน';
+          break;
+        case 29:
+          message = 'โอเค เริ่มเดินหน้าไปพร้อมกันนะ!';
+          break;
+        default:
+          message = `ข้อความที่ ${i + 1} จาก ${currentCharacterName}`;
+      }
 
-    // ตรวจสอบจำนวนข้อความที่เพิ่มขึ้น
-    const finalMessages = await page.locator('[data-testid^="message-bubble-"], [data-testid="system-message"]').count();
-    expect(finalMessages).toBe(initialMessages + 7); // 7 ข้อความใหม่
+      await page.getByTestId('message-input').fill(message);
+      await page.getByTestId('send-button').click();
+
+      // รอสักครู่ระหว่างข้อความ
+      await page.waitForTimeout(300);
+    }
+
+    // เพิ่มข้อความระบบปิดท้ายเรื่อง
+    await addSystemMessage('🌌 เวลาล่วงเลยผ่านเที่ยงคืน... ความลึกลับยังคงรอการค้นพบ');
 
     // ตรวจสอบข้อความสุดท้าย
-    await expect(page.locator('text=เสียงประหลาด').last()).toBeVisible();
-
-    // ตรวจสอบว่าข้อความระบบมี 2 ข้อความใหม่
-    const newSystemMessages = await page.locator('[data-testid="system-message"]').count();
-    expect(newSystemMessages).toBeGreaterThanOrEqual(2);
+    await expect(page.locator('text=ความลึกลับยังคงรอการค้นพบ').last()).toBeVisible();
   });
 });

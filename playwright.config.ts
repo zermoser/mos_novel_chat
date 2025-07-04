@@ -19,7 +19,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    // headless: false, // เปิด UI ขณะรันเทส
+    headless: false, // เปิด UI ขณะรันเทส
     // video: 'on', // ถ้าต้องการบันทึกวิดีโอการทดสอบ
     baseURL: 'http://localhost:3015/mos_novel_chat',
     trace: 'on-first-retry',

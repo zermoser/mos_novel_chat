@@ -19,3 +19,25 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(to bottom, #8b5cf6, #d946ef);
 }
+
+/* ป้องกันการซูมใน input บนมือถือ */
+input,
+select,
+textarea {
+    font-size: 16px;
+}
+
+/* ป้องกันการ select ข้อความ */
+* {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* อนุญาต select ใน input และ textarea */
+input,
+textarea {
+    -webkit-user-select: auto !important;
+    user-select: auto !important;
+}

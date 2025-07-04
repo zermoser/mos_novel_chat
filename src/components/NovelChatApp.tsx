@@ -22,7 +22,7 @@ interface Character {
 const CharacterAvatar = ({ character, size = "md" }: { character: Character; size?: "sm" | "md" | "lg" }) => {
     const sizeClasses = {
         sm: "w-8 h-8 text-base",
-        md: "w-10 h-10 text-lg",
+        md: "w-9 h-9 sm:w-10 sm:h-10 text-lg",
         lg: "w-12 h-12 text-xl"
     };
 
@@ -438,7 +438,7 @@ const NovelChatApp: React.FC = () => {
                                 }
                             }}
                             placeholder={`พิมพ์ข้อความในนามของ ${getCharacterById(currentSpeaker)?.name}...`}
-                            className="flex-1 px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-gray-800 placeholder-gray-500 text-sm shadow-sm"
+                            className="flex-1 px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-gray-800 placeholder-gray-500 text-base sm:text-sm shadow-sm"
                         />
                         <button
                             onClick={() => handleSendMessage(input)}
